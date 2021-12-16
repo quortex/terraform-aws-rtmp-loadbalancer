@@ -1,9 +1,6 @@
 data "aws_elb_service_account" "current" {}
 
 # The elastic loadbalancer for rtmp.
-locals {
-  elb_name = var.elb_name != "" ? var.elb_name : var.name
-}
 resource "aws_elb" "rtmp" {
   name                        = local.elb_name
   subnets                     = var.subnet_ids
@@ -38,7 +35,7 @@ resource "aws_elb" "rtmp" {
       instance_protocol  = "tcp"
       lb_port            = 443
       lb_protocol        = "ssl"
-      ssl_certificate_id = aws_acm_certificate.cert.0.id
+      ssl_certificate_id = local.create_cert ? aws_acm_certificate.cert.0.arn : var.ssl_certificate_arn
     }
   }
 
@@ -61,9 +58,6 @@ resource "aws_autoscaling_attachment" "rtmp" {
 }
 
 # ELB security group configuration
-locals {
-  sg_name = var.elb_security_group_name != "" ? var.elb_security_group_name : "${var.name}-elb"
-}
 resource "aws_security_group" "rtmp_loadbalancer" {
   name        = local.sg_name
   description = "Security group for the rtmp ELB ${local.elb_name}"
@@ -188,10 +182,6 @@ resource "aws_route53_record" "rtmp" {
 }
 
 # Certificate in AWS Certificate Manager
-locals {
-  cert_name   = var.ssl_certificate_name != "" ? var.ssl_certificate_name : var.name
-  create_cert = var.ssl_certificate_arn == null && var.rtmps_enabled
-}
 resource "aws_acm_certificate" "cert" {
   count             = local.create_cert ? 1 : 0
   domain_name       = var.ssl_certificate_domain_name
