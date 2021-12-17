@@ -35,7 +35,7 @@ resource "aws_elb" "rtmp" {
       instance_protocol  = "tcp"
       lb_port            = 443
       lb_protocol        = "ssl"
-      ssl_certificate_id = local.create_cert ? aws_acm_certificate.cert.0.arn : var.ssl_certificate_arn
+      ssl_certificate_id = var.create_cert ? aws_acm_certificate.cert.0.arn : var.ssl_certificate_arn
     }
   }
 
@@ -183,7 +183,7 @@ resource "aws_route53_record" "rtmp" {
 
 # Certificate in AWS Certificate Manager
 resource "aws_acm_certificate" "cert" {
-  count             = local.create_cert ? 1 : 0
+  count             = var.create_cert ? 1 : 0
   domain_name       = var.ssl_certificate_domain_name
   validation_method = "DNS"
 
@@ -200,7 +200,7 @@ resource "aws_acm_certificate" "cert" {
 
 # DNS record to validate this certificate
 resource "aws_route53_record" "cert_validation" {
-  count   = local.create_cert ? 1 : 0
+  count   = var.create_cert ? 1 : 0
   name    = tolist(aws_acm_certificate.cert.0.domain_validation_options).0.resource_record_name
   type    = tolist(aws_acm_certificate.cert.0.domain_validation_options).0.resource_record_type
   zone_id = var.dns_hosted_zone_id
@@ -210,7 +210,7 @@ resource "aws_route53_record" "cert_validation" {
 
 # Certificate validation
 resource "aws_acm_certificate_validation" "cert" {
-  count                   = local.create_cert ? 1 : 0
+  count                   = var.create_cert ? 1 : 0
   certificate_arn         = aws_acm_certificate.cert.0.arn
   validation_record_fqdns = [aws_route53_record.cert_validation.0.fqdn]
 }
