@@ -148,6 +148,12 @@ variable "rtmps_enabled" {
   default     = true
 }
 
+variable "create_cert" {
+  type        = bool
+  description = "Should the certificate be created by the module. If not, you must provide var.ssl_certificate_arn."
+  default     = true
+}
+
 variable "dns_hosted_zone_id" {
   type        = string
   description = "The ID of the hosted zone in Route53, under which the DNS record should be created."
