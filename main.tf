@@ -130,6 +130,15 @@ resource "aws_s3_bucket" "access_logs" {
   tags = var.tags
 }
 
+resource "aws_s3_bucket_public_access_block" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_s3_bucket_policy" "access_logs" {
   bucket = aws_s3_bucket.access_logs.id
   policy = jsonencode({
