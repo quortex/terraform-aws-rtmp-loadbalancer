@@ -188,3 +188,9 @@ variable "tags" {
   description = "Tags to apply to resources. A list of key->value pairs."
   default     = {}
 }
+
+variable "enable_bucket_encryption" {
+  type        = bool
+  description = "Should the created bucket be encrypted using SSE-S3."
+  default     = true
+}
