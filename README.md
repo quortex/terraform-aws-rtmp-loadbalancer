@@ -86,12 +86,14 @@ module "rtmp_loadbalancer" {
 | <a name="input_access_logs_expiration"></a> [access\_logs\_expiration](#input\_access\_logs\_expiration) | Specifies the number of days for which access logs are kept (indefinitely if not specified). | `number` | `null` | no |
 | <a name="input_access_logs_force_destroy"></a> [access\_logs\_force\_destroy](#input\_access\_logs\_force\_destroy) | A boolean that indicates all objects should be deleted from the access logs bucket so that the bucket can be destroyed without error. These objects are not recoverable. | `bool` | `false` | no |
 | <a name="input_rtmps_enabled"></a> [rtmps\_enabled](#input\_rtmps\_enabled) | Wether to enable rtmps. If set to true, a certificate will be created in certificate manager as well as load balancer configuration to perform ssl termination. | `bool` | `true` | no |
+| <a name="input_create_cert"></a> [create\_cert](#input\_create\_cert) | Should the certificate be created by the module. If not, you must provide var.ssl\_certificate\_arn. | `bool` | `true` | no |
 | <a name="input_dns_hosted_zone_id"></a> [dns\_hosted\_zone\_id](#input\_dns\_hosted\_zone\_id) | The ID of the hosted zone in Route53, under which the DNS record should be created. | `string` | n/a | yes |
 | <a name="input_dns_record"></a> [dns\_record](#input\_dns\_record) | The domain name record to add in zone defined by dns\_hosted\_zone\_id for alias on elb dns name. | `string` | `"rtmp"` | no |
 | <a name="input_ssl_certificate_arn"></a> [ssl\_certificate\_arn](#input\_ssl\_certificate\_arn) | The ARN identifier of an existing Certificate in AWS Certificate Manager, to be used for RTMPS requests. If not defined, a new certificate will be issued and validated in the AWS Certificate Manager. | `string` | `null` | no |
 | <a name="input_ssl_certificate_name"></a> [ssl\_certificate\_name](#input\_ssl\_certificate\_name) | Override the cert manager certificate name. | `string` | `""` | no |
 | <a name="input_ssl_certificate_domain_name"></a> [ssl\_certificate\_domain\_name](#input\_ssl\_certificate\_domain\_name) | The complete domain name that will be written in the TLS certificate. Can include a wildcard. Required for rtmps. | `string` | `null` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to resources. A list of key->value pairs. | `map(any)` | `{}` | no |
+| <a name="input_enable_bucket_encryption"></a> [enable\_bucket\_encryption](#input\_enable\_bucket\_encryption) | Should the created bucket be encrypted using SSE-S3. | `bool` | `true` | no |
 
 ## Outputs
 

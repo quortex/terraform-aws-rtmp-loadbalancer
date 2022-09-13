@@ -191,6 +191,6 @@ variable "tags" {
 
 variable "enable_bucket_encryption" {
   type        = bool
-  description = "Should the created bucket encrypted using SSE-S3."
+  description = "Should the created bucket be encrypted using SSE-S3."
   default     = true
 }
