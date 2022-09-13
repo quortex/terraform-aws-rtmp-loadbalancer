@@ -117,17 +117,26 @@ resource "aws_security_group_rule" "rtmp_ingress" {
 resource "aws_s3_bucket" "access_logs" {
   bucket        = var.access_logs_bucket_name != "" ? var.access_logs_bucket_name : "${var.name}-access-logs"
   force_destroy = var.access_logs_force_destroy
-  acl           = "private"
 
-  lifecycle_rule {
-    enabled = var.access_logs_expiration != null
+  tags = var.tags
+}
+
+resource "aws_s3_bucket_acl" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "access_logs" {
+  count = var.access_logs_expiration != null ? 1 : 0
+
+  bucket = aws_s3_bucket.access_logs.id
+  rule {
+    id     = "expiration"
+    status = "Enabled"
     expiration {
       days = var.access_logs_expiration
     }
-    tags = var.tags
   }
-
-  tags = var.tags
 }
 
 resource "aws_s3_bucket_public_access_block" "access_logs" {
