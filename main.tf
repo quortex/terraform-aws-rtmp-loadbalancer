@@ -121,11 +121,6 @@ resource "aws_s3_bucket" "access_logs" {
   tags = var.tags
 }
 
-resource "aws_s3_bucket_acl" "access_logs" {
-  bucket = aws_s3_bucket.access_logs.id
-  acl    = "private"
-}
-
 resource "aws_s3_bucket_lifecycle_configuration" "access_logs" {
   count = var.access_logs_expiration != null ? 1 : 0
 
