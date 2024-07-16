@@ -1,66 +1,83 @@
-data "aws_elb_service_account" "current" {}
+# Network load balancer for rtmp.
+resource "aws_lb" "rtmp" {
+  name                             = local.lb_name
+  internal                         = false
+  load_balancer_type               = "network"
+  subnets                          = var.subnet_ids
+  security_groups                  = [aws_security_group.rtmp_loadbalancer.id]
+  enable_cross_zone_load_balancing = var.lb_cross_zone_load_balancing
+  idle_timeout                     = var.lb_idle_timeout
 
-# The elastic loadbalancer for rtmp.
-resource "aws_elb" "rtmp" {
-  name                        = local.elb_name
-  subnets                     = var.subnet_ids
-  security_groups             = [aws_security_group.rtmp_loadbalancer.id]
-  cross_zone_load_balancing   = var.elb_cross_zone_load_balancing
-  idle_timeout                = var.elb_idle_timeout
-  connection_draining         = var.elb_connection_draining
-  connection_draining_timeout = var.elb_connection_draining_timeout
-
-  # Access logs storage in s3
+  # Store NLB logs in s3
   access_logs {
-    enabled       = var.access_logs_enabled
-    bucket        = aws_s3_bucket.access_logs.bucket
-    bucket_prefix = var.access_logs_bucket_prefix
-    interval      = var.access_logs_interval
-  }
-
-  # The RTMP listener configuration
-  listener {
-    instance_port     = var.rtmp_backend_ingress_port
-    instance_protocol = "tcp"
-    lb_port           = 1935
-    lb_protocol       = "tcp"
-  }
-
-  # The RTMPS listener configuration
-  dynamic "listener" {
-    for_each = var.rtmps_enabled ? [true] : []
-
-    content {
-      instance_port      = var.rtmp_backend_ingress_port
-      instance_protocol  = "tcp"
-      lb_port            = 443
-      lb_protocol        = "ssl"
-      ssl_certificate_id = var.create_cert ? aws_acm_certificate.cert[0].arn : var.ssl_certificate_arn
-    }
-  }
-
-  # Health check configuration
-  health_check {
-    healthy_threshold   = var.elb_health_check_healthy_threshold
-    unhealthy_threshold = var.elb_health_check_unhealthy_threshold
-    timeout             = var.elb_health_check_timeout
-    target              = "TCP:${var.rtmp_backend_ingress_port}"
-    interval            = var.elb_health_check_interval
+    enabled = var.access_logs_enabled
+    bucket  = aws_s3_bucket.access_logs.bucket
+    prefix  = var.access_logs_bucket_prefix
   }
 
   tags = var.tags
 }
 
-# ELB target groups attachment
-resource "aws_autoscaling_attachment" "rtmp" {
-  autoscaling_group_name = var.rtmp_backend_autoscaling_group_name
-  elb                    = aws_elb.rtmp.name
+resource "aws_lb_target_group" "rtmp" {
+  name                   = var.name
+  vpc_id                 = var.vpc_id
+  port                   = var.rtmp_backend_ingress_port
+  protocol               = "TCP"
+  connection_termination = var.lb_connection_termination
+  deregistration_delay   = var.lb_deregistration_delay
+  preserve_client_ip     = false
+
+  target_health_state {
+    enable_unhealthy_connection_termination = var.lb_unhealthy_connection_termination
+  }
+
+  health_check {
+    healthy_threshold   = var.lb_health_check_healthy_threshold
+    interval            = var.lb_health_check_interval
+    port                = var.rtmp_backend_ingress_port
+    protocol            = "TCP"
+    timeout             = var.lb_health_check_timeout
+    unhealthy_threshold = var.lb_health_check_unhealthy_threshold
+  }
+
+  tags = var.tags
 }
 
-# ELB security group configuration
+resource "aws_lb_listener" "rtmp" {
+  load_balancer_arn = aws_lb.rtmp.arn
+  port              = "1935"
+  protocol          = "TCP"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.rtmp.arn
+  }
+  tags = var.tags
+}
+
+resource "aws_lb_listener" "rtmps" {
+  count             = var.rtmps_enabled ? 1 : 0
+  load_balancer_arn = aws_lb.rtmp.arn
+  port              = "443"
+  protocol          = "TLS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-0-2021-06" # Allow TLS 1.3, compatible down to 1.0
+  certificate_arn   = var.create_cert ? aws_acm_certificate.cert[0].arn : var.ssl_certificate_arn
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.rtmp.arn
+  }
+  tags = var.tags
+}
+
+resource "aws_autoscaling_attachment" "rtmp" {
+  count                  = var.rtmp_backend_autoscaling_group_name != "" ? 1 : 0
+  autoscaling_group_name = var.rtmp_backend_autoscaling_group_name
+  lb_target_group_arn    = aws_lb_target_group.rtmp.arn
+}
+
+# Common security group configuration
 resource "aws_security_group" "rtmp_loadbalancer" {
   name        = local.sg_name
-  description = "Security group for the rtmp ELB ${local.elb_name}"
+  description = "Security group for the rtmp ELB ${local.lb_name}"
   vpc_id      = var.vpc_id
 
   tags = merge({
@@ -71,24 +88,24 @@ resource "aws_security_group" "rtmp_loadbalancer" {
 }
 
 resource "aws_security_group_rule" "rtmp_loadbalancer_ingress_rtmp" {
-  count             = length(var.elb_ingress_cidr_blocks_rtmp) > 0 ? 1 : 0
+  count             = length(var.lb_ingress_cidr_blocks_rtmp) > 0 ? 1 : 0
   description       = "Allow RTMP ingress"
   type              = "ingress"
   from_port         = 1935
   to_port           = 1935
   protocol          = "tcp"
-  cidr_blocks       = var.elb_ingress_cidr_blocks_rtmp
+  cidr_blocks       = var.lb_ingress_cidr_blocks_rtmp
   security_group_id = aws_security_group.rtmp_loadbalancer.id
 }
 
 resource "aws_security_group_rule" "rtmp_loadbalancer_ingress_rtmps" {
-  count             = length(var.elb_ingress_cidr_blocks_rtmps) > 0 ? 1 : 0
+  count             = length(var.lb_ingress_cidr_blocks_rtmps) > 0 ? 1 : 0
   description       = "Allow RTMPS ingress"
   type              = "ingress"
   from_port         = 443
   to_port           = 443
   protocol          = "tcp"
-  cidr_blocks       = var.elb_ingress_cidr_blocks_rtmps
+  cidr_blocks       = var.lb_ingress_cidr_blocks_rtmps
   security_group_id = aws_security_group.rtmp_loadbalancer.id
 }
 
@@ -163,14 +180,6 @@ resource "aws_s3_bucket_policy" "access_logs" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_elb_service_account.current.id}:root"
-        },
-        Action   = "s3:PutObject",
-        Resource = "arn:aws:s3:::${aws_s3_bucket.access_logs.bucket}/*"
-      },
-      {
-        Effect = "Allow",
-        Principal = {
           Service = "delivery.logs.amazonaws.com"
         },
         Action   = "s3:PutObject",
@@ -200,8 +209,8 @@ resource "aws_route53_record" "rtmp" {
   type    = "A"
 
   alias {
-    name                   = aws_elb.rtmp.dns_name
-    zone_id                = aws_elb.rtmp.zone_id
+    name                   = aws_lb.rtmp.dns_name
+    zone_id                = aws_lb.rtmp.zone_id
     evaluate_target_health = false
   }
 }

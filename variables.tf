@@ -19,91 +19,98 @@ variable "subnet_ids" {
   default     = []
 }
 
-variable "elb_name" {
+variable "lb_name" {
   type        = string
   description = "Override the ELB name."
   default     = ""
 }
 
-variable "elb_cross_zone_load_balancing" {
+variable "lb_cross_zone_load_balancing" {
   type        = bool
   description = "Enable cross-zone load balancing."
   default     = false
 }
 
-variable "elb_idle_timeout" {
+variable "lb_idle_timeout" {
   type        = number
   description = "The time in seconds that the connection is allowed to be idle."
   default     = 60
 }
 
-variable "elb_connection_draining" {
+variable "lb_connection_termination" {
   type        = bool
-  description = "Boolean to enable connection draining."
-  default     = true
+  description = "Whether to terminate connections at the end of the deregistration timeout on Network Load Balancers."
+  default     = false
 }
 
-variable "elb_connection_draining_timeout" {
+variable "lb_deregistration_delay" {
   type        = number
-  description = "The time in seconds to allow for connections to drain."
+  description = "The time to wait for in-flight requests to complete while deregistering a target."
   default     = 300
 }
 
-variable "elb_health_check_healthy_threshold" {
+variable "lb_unhealthy_connection_termination" {
+  type        = bool
+  description = "Whether the load balancer terminates connections to unhealthy targets."
+  default     = true
+}
+
+variable "lb_health_check_healthy_threshold" {
   type        = number
   description = "The number of checks before the instance is declared healthy."
   default     = 6
 }
 
-variable "elb_health_check_unhealthy_threshold" {
+variable "lb_health_check_unhealthy_threshold" {
   type        = number
   description = "The number of checks before the instance is declared unhealthy."
   default     = 2
 }
 
-variable "elb_health_check_timeout" {
+variable "lb_health_check_timeout" {
   type        = number
   description = "The interval between checks."
   default     = 5
 }
 
-variable "elb_health_check_interval" {
+variable "lb_health_check_interval" {
   type        = number
   description = "The length of time before the check times out."
   default     = 10
 }
 
-variable "elb_security_group_name" {
+variable "lb_security_group_name" {
   type        = string
   description = "Override the ELB security group name."
   default     = ""
 }
 
-variable "elb_ingress_cidr_blocks_rtmp" {
+variable "lb_ingress_cidr_blocks_rtmp" {
   type        = list(string)
-  description = "CIDRs to allow for the rtmp ingress."
+  description = "CIDRs to allow for the RTMP ingress."
   default     = ["0.0.0.0/0"]
 }
 
-variable "elb_ingress_cidr_blocks_rtmps" {
+variable "lb_ingress_cidr_blocks_rtmps" {
   type        = list(string)
-  description = "CIDRs to allow for the rtmps ingress."
+  description = "CIDRs to allow for the RTMPS ingress."
   default     = ["0.0.0.0/0"]
 }
 
 variable "rtmp_backend_ingress_port" {
   type        = string
-  description = "The rtmp backend ingress port (envoy port for rtmp)."
+  description = "The RTMP backend ingress port (envoy port for rtmp)."
 }
 
 variable "rtmp_backend_security_group_id" {
   type        = string
-  description = "The rtmp backend security group id (used to allow ingress on rtmp_backend_ingress_port)."
+  description = "The RTMP backend security group id (used to allow ingress on rtmp_backend_ingress_port)."
 }
 
 variable "rtmp_backend_autoscaling_group_name" {
   type        = string
-  description = "The rtmp backend ASG name."
+  description = "The RTMP backend ASG name."
+  default     = ""
 }
 
 variable "access_logs_enabled" {
@@ -122,12 +129,6 @@ variable "access_logs_bucket_prefix" {
   type        = string
   description = "The access logs bucket prefix. Logs are stored in the root if not configured."
   default     = null
-}
-
-variable "access_logs_interval" {
-  type        = number
-  description = "The publishing interval in minutes."
-  default     = 60
 }
 
 variable "access_logs_expiration" {
@@ -179,7 +180,7 @@ variable "ssl_certificate_name" {
 
 variable "ssl_certificate_domain_name" {
   type        = string
-  description = "The complete domain name that will be written in the TLS certificate. Can include a wildcard. Required for rtmps."
+  description = "The complete domain name that will be written in the TLS certificate. Can include a wildcard. Required for RTMPS."
   default     = null
 }
 
