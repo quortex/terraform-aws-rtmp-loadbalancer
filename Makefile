@@ -30,4 +30,4 @@ validate: ## Check whether the terraform configuration is valid.
 	@terraform validate
 
 doc: ## Generate documentation.
-	@docker run --rm --volume "$$(pwd):/workspace" quay.io/terraform-docs/terraform-docs:0.15.0 /workspace > README.md
+	@docker run --rm --volume "$$(pwd):/workspace" quay.io/terraform-docs/terraform-docs:0.18.0 /workspace > README.md
