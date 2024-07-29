@@ -97,6 +97,12 @@ variable "lb_ingress_cidr_blocks_rtmps" {
   default     = ["0.0.0.0/0"]
 }
 
+variable "lb_ssl_policy" {
+  type        = string
+  description = "Name of the SSL Policy for the listener."
+  default     = "ELBSecurityPolicy-TLS13-1-0-2021-06" # Allow TLS 1.3, compatible down to 1.0
+}
+
 variable "rtmp_backend_ingress_port" {
   type        = string
   description = "The RTMP backend ingress port (envoy port for rtmp)."

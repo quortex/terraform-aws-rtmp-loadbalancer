@@ -59,7 +59,7 @@ resource "aws_lb_listener" "rtmps" {
   load_balancer_arn = aws_lb.rtmp.arn
   port              = "443"
   protocol          = "TLS"
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-0-2021-06" # Allow TLS 1.3, compatible down to 1.0
+  ssl_policy        = var.lb_ssl_policy
   certificate_arn   = var.create_cert ? aws_acm_certificate.cert[0].arn : var.ssl_certificate_arn
   default_action {
     type             = "forward"
